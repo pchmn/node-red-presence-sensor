@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+       #map {
+        height: 400px;
+        width: 100%;
+       }
+    </style>
+  </head>
+  <body>
+    <h3>My Google Maps Demo</h3>
+    <div id="map"></div>
+    <script src="https://www.gstatic.com/firebasejs/4.1.2/firebase.js"></script>
+    <script>
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyAOWUE7YxJmy3kR53hjE-oLM1VE23HkZ0s",
+        authDomain: "plateforme-donnees-urbaines.firebaseapp.com",
+        databaseURL: "https://plateforme-donnees-urbaines.firebaseio.com",
+        projectId: "plateforme-donnees-urbaines",
+        storageBucket: "plateforme-donnees-urbaines.appspot.com",
+        messagingSenderId: "238930573214"
+      };
+      firebase.initializeApp(config);
+
+      // google maps
+      function initMap() {
+        var database = firebase.database();
+        var sensorsRef = firebase.database().ref('equipments/presence_sensors');
+        var streetLightsRef = firebase.database().ref('equipments/street_lights');
+
+        var uluru = {lat: 48.1341, lng: -1.62897};
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 17,
+          center: uluru
+        });
+
+        // sensors
+        var sensors = [];
+        // first time
+        sensorsRef.once('value', function(snapshot) {
+          snapshot.forEach(function(childSnapshot) {
+            var childKey = childSnapshot.key;
+            var childData = childSnapshot.val();
+            sensors[childKey] = new google.maps.Marker({
+              position: {"lat": childData.position.lat, "lng":  childData.position.lng},
+              map: map
+            });
+            setSensorColor(sensors[childKey], childData.value);
+          });
+        });
+        // on change
+        sensorsRef.on('child_changed', function(data) {
+          setSensorColor(sensors[data.key], data.val().value);
+          console.log(data.val())
+        }); 
+
+        // street lights
+        var streetLights = [];
+        // first time
+        streetLightsRef.once('value', function(snapshot) {
+          snapshot.forEach(function(childSnapshot) {
+            var childKey = childSnapshot.key;
+            var childData = childSnapshot.val();
+            streetLights[childKey] = new google.maps.Marker({
+              position: {"lat": childData.position.lat, "lng":  childData.position.lng},
+              map: map
+            });
+            setStreetLightColor(streetLights[childKey], childData.value);
+          });
+        });
+        // on change
+        streetLightsRef.on('child_changed', function(data) {
+          setStreetLightColor(streetLights[data.key], data.val().value);
+          console.log(data.val())
+        }); 
+      }
+
+      function setSensorColor(sensor, value) {
+        switch(value) {
+          case 0:
+            sensor.setIcon("./img/sensor_0.svg");
+            break;
+          case 1:
+            sensor.setIcon("./img/sensor_1.svg");
+            break;
+          case 2:
+            sensor.setIcon("./img/sensor_2.svg");
+            break;
+          case -1:
+            sensor.setIcon("./img/sensor_-1.svg");
+            break;    
+        }
+      }
+
+      function setStreetLightColor(streetLight, value) {
+        switch(value) {
+          case 0:
+            streetLight.setIcon("./img/street_light_0.png");
+            break;
+          case 1:
+            streetLight.setIcon("./img/street_light_1.png");
+            break;
+          case -1:
+            streetLight.setIcon("./img/street_light_-1.png");
+            break;    
+        } 
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAOWUE7YxJmy3kR53hjE-oLM1VE23HkZ0s&callback=initMap">
+    </script>
+  </body>
+</html>
